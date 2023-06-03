@@ -17,7 +17,7 @@ new Server({
     }, {timing: 2000});
 
     this.get("/projects/:projectid/dependencies", (schema, request) => {
-      if (dependencies.hasOwnProperty(request.params.projectid)) {
+      if (dependencies.hasOwnProperty(request.params.projectid)) { // eslint-disable-line
         return dependencies[request.params.projectid];
       } else {
          return new Response(404, { errors: ["Project not found"]})

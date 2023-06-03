@@ -1,10 +1,15 @@
-
-.projectSelector {
-  width: 50%;
-  width: 25%;
-  min-width: 200px;
+.container {
+  margin: 40px
 }
 
-.depVizContainer {
-  margin: 20px;
+.project-selector {
+  width: 300px;
+}
+
+.stats-table td {
+  padding: 4px 40px 0 0;
+}
+
+.stats-table td {
+  padding: 4px 40px 0 0;
 }
