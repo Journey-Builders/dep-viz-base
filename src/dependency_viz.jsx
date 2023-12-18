@@ -2,45 +2,75 @@ import React from "react";
 
 import "./dependency_viz.css";
 import useDependencyViz from "./hooks/use-dependency-viz";
+import { ProjectProvider, useProjectContext } from "./project-context";
 
-export const DependencyVisualization = () => {
-  const { state } = useDependencyViz();
-  console.log('[render]', { state });
+// normally i'd throw these in a new file, but we'll keep it all in one for simplicity
+const ProjectSelector = () => {
+  const { state, dispatch } = useProjectContext();
+
+  function handleProjectSelect(event) {
+    dispatch({ type: 'SET_SELECTED_PROJECT_ID', payload: event.target.value });
+  } 
 
   return (
-    <div className="depVizContainer">
-      <h1>Project</h1>
-      <select>
-        <option/>
-        <option value="pid1">Placeholder Project Name 1</option>
-        <option value="pid2">Placeholder Project Name 2</option>
+    <label htmlFor="projectSelect">
+      Select a Project:&nbsp;
+      <select id="projectSelect" onChange={handleProjectSelect}>
+        <option value="">Select...</option>
+        {(state?.projects ?? []).map((project) => (
+          <option key={project.id} value={project.id}>
+            {project.name}
+          </option>
+        ))}
       </select>
+    </label>
+  );
+};
 
+const GraphViewer = () => {
+  const { state: { stats: { taskCount, dependencyCount, rootCount, maxDepth } } } = useProjectContext();
+
+  return (
+    <>
       <h2>Graph Stats</h2>
         <table>
           <tbody>
             <tr>
               <td>Task Count</td>
-              <td>0</td>
+              <td>{taskCount}</td>
             </tr>
             <tr>
               <td>Dependency Count</td>
-              <td>0</td>
+              <td>{dependencyCount}</td>
             </tr>
             <tr>
               <td>Root Count</td>
-              <td>0</td>
+              <td>{rootCount}</td>
             </tr>
             <tr>
               <td>Max Depth</td>
-              <td>0</td>
+              <td>{maxDepth}</td>
             </tr>
           </tbody>
         </table>
 
       <h2>Graph Visualization</h2>
-      <div>Graph Viz Component</div>
-    </div>
+      {/* TODO */}
+    </>
+  );
+};
+
+export const DependencyVisualization = () => {
+  const { state: { loading, projects, tasks, dependencies } } = useDependencyViz();
+
+  if (loading) {
+    return (<span>Loading...</span>);
+  } 
+  return (
+    <ProjectProvider projects={projects} tasks={tasks} dependencies={dependencies}>
+      <ProjectSelector />
+      <GraphViewer />
+    </ProjectProvider>
   );
 };
 

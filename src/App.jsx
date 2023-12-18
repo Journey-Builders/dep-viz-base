@@ -5,9 +5,10 @@ require('./data');
 
 function App() {
   return (
-    <>
+    <div className="depVizContainer">
+      <h1>Project</h1>
       <DependencyVisualization />
-    </>
+    </div>
   );
 }
 

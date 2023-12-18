@@ -14,8 +14,8 @@ const projectsReducer = (state, action) => {
 };
 
 const getProjects = async () => {
-  const tasks = [];
-  const dependencies = [];
+  const tasks = {};
+  const dependencies = {};
 
   // fetch our project information
   const projects = await api.fetchProjects();
@@ -28,8 +28,8 @@ const getProjects = async () => {
         api.fetchTasks(id),
         api.fetchDependencies(id)
       ]);
-      tasks.push({ [id]: tasksPayload });
-      dependencies.push({ [id]: depsPayload });
+      tasks[id] = tasksPayload;
+      dependencies[id] = depsPayload;
     })
   );
 
@@ -56,11 +56,13 @@ export const loadProjects = async (dispatch) => {
   }
 };
 
+// mostly want to keep this responsible for data fetching
+// we'll rely on the context as our local state management system
 const useDependencyViz = () => {
   const [state, dispatch] = useReducer(projectsReducer, {
     projects: [],
-    tasks: [],
-    dependencies: [],
+    tasks: {},
+    dependencies: {},
     loading: true,
     error: null
   });
