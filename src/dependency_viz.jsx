@@ -1,9 +1,12 @@
-import { React } from "react";
+import React from "react";
 
 import "./dependency_viz.css";
-import api from './api';
+import useDependencyViz from "./hooks/use-dependency-viz";
 
 export const DependencyVisualization = () => {
+  const { state } = useDependencyViz();
+  console.log('[render]', { state });
+
   return (
     <div className="depVizContainer">
       <h1>Project</h1>
@@ -40,3 +43,5 @@ export const DependencyVisualization = () => {
     </div>
   );
 };
+
+DependencyVisualization.whyDidYouRender = true;

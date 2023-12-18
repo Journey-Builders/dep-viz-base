@@ -1,5 +1,5 @@
 import React from 'react';
-import {DependencyVisualization} from './dependency_viz';
+import { DependencyVisualization } from './dependency_viz';
 
 require('./data');
 
@@ -8,7 +8,6 @@ function App() {
     <>
       <DependencyVisualization />
     </>
-
   );
 }
 
