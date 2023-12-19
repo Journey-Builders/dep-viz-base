@@ -35,11 +35,6 @@ function ruleReducer(state, action) {
         };
       }
 
-      console.log('*', {
-        ...state,
-        selectedProjectID: action.payload,
-        ...generateStats(action.payload, state)
-      });
       return {
         ...state,
         selectedProjectID: action.payload,
