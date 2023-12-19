@@ -74,37 +74,39 @@ function getRootCount({ tasks = [], dependencies = [] }) {
 }
 
 function getMaxDepth({ dependencies = [], tasks = [] }) {
-  // TODO temp...
-  if (tasks.length > 50 || dependencies.length > 50) {
-    return 0;
-  }
-  const adjacencyList = new Map();
-
-  // Build adjacency list from dependencies
-  dependencies.forEach((dep) => {
-    const { predecessor_id, successor_id } = dep;
-    if (!adjacencyList.has(predecessor_id)) {
-      adjacencyList.set(predecessor_id, []);
+  // set up a map indexed by our task id that lists its dependent tasks
+  // { 1: [2, 3], 3: [4], 2: [5], 4: [5] }
+  const taskSuccessorsMap = new Map();
+  dependencies.forEach(({ predecessor_id, successor_id }) => {
+    if (!taskSuccessorsMap.has(predecessor_id)) {
+      taskSuccessorsMap.set(predecessor_id, []);
     }
-    adjacencyList.get(predecessor_id).push(successor_id);
+    taskSuccessorsMap.get(predecessor_id).push(successor_id);
   });
 
-  // recurse to find the depth of a task
-  // TODO how scary is this perf wise for bigger graphs? ...lmao scary
-  function findDepth(taskId) {
-    if (!adjacencyList.has(taskId)) {
-      return 0;
-    }
+  const maxDepthMap = new Map();
+  const tasksWithDepth = tasks.map((task) => ({ task, depth: 0 }));
 
-    const successors = adjacencyList.get(taskId);
-    const depths = successors.map(findDepth);
-    return 1 + Math.max(...depths);
+  while (tasksWithDepth.length > 0) {
+    const { task, depth } = tasksWithDepth.pop();
+
+    const isNewTask = !maxDepthMap.has(task.id);
+    const isIncreasedDepth = depth > maxDepthMap.get(task.id);
+    if (isNewTask || isIncreasedDepth) {
+      maxDepthMap.set(task.id, depth);
+
+      const successors = taskSuccessorsMap.get(task.id) || [];
+      tasksWithDepth.push(
+        // increment our depth for each successor for this task
+        ...successors.map((successor) => ({
+          task: tasks.find((t) => t.id === successor),
+          depth: depth + 1
+        }))
+      );
+    }
   }
 
-  // Calculate the depth for each task and find the maximum
-  const depths = tasks.map((task) => findDepth(task.id));
-  const maxDepth = Math.max(...depths);
-
+  const maxDepth = Math.max(...Array.from(maxDepthMap.values()));
   return maxDepth;
 }
 
