@@ -67,68 +67,28 @@ const GraphViewer = () => {
   );
 };
 
-const GraphVisualizer = () => {
-  const {
-    state: { selectedProjectID, tasks, dependencies }
-  } = useProjectContext();
-  const svgRef = useRef();
-  const selectedProjectTasks = selectedProjectID
-    ? tasks[selectedProjectID]
-    : null;
-  const selectedProjectDependencies = selectedProjectID
-    ? dependencies[selectedProjectID]
-    : null;
+const drawGraph = (data = [], ref) => {
+  const stratify = d3dag.graphStratify();
+  const dag = stratify(data);
 
-  useEffect(() => {
-    if (!selectedProjectTasks) {
-      return;
-    }
+  const nodeRadius = 5;
+  const nodeSize = [nodeRadius * 10, nodeRadius * 10];
+  const layout = d3dag
+    .sugiyama()
+    .coord(d3dag.coordQuad())
+    .nodeSize(nodeSize)
+    .gap([nodeRadius, nodeRadius]);
+  const { width, height } = layout(dag);
+  const svg = d3.select(ref.current);
 
-    // TODO lets work off a sample for the moment
-    const sample = [
-      {
-        id: '1',
-        parentIds: []
-      },
-      {
-        id: '2',
-        parentIds: ['1']
-      },
-      {
-        id: '3',
-        parentIds: ['1']
-      },
-      {
-        id: '4',
-        parentIds: ['3']
-      },
-      {
-        id: '5',
-        parentIds: ['2', '4']
-      }
-    ];
+  // clear out any prior svg instances
+  svg.selectAll('*').remove();
 
-    const stratify = d3dag.graphStratify();
-    const dag = stratify(sample);
+  const g = svg.append('g');
+  svg.attr('width', width).attr('height', height);
 
-    const nodeRadius = 5;
-    const nodeSize = [nodeRadius * 10, nodeRadius * 10];
-    const layout = d3dag
-      .sugiyama()
-      .coord(d3dag.coordQuad())
-      .nodeSize(nodeSize)
-      .gap([nodeRadius, nodeRadius]);
-    const { width, height } = layout(dag);
-    const svg = d3.select(svgRef.current);
-
-    // clear out any prior svgs
-    svg.selectAll('*').remove();
-
-    const g = svg.append('g');
-    svg.attr('width', width).attr('height', height);
-
-    // draw some lines
-    g.selectAll('.link')
+  // draw some lines
+  g.selectAll('.link')
     .data(dag.links())
     .join((enter) =>
       enter
@@ -146,27 +106,80 @@ const GraphVisualizer = () => {
         .attr('marker-end', 'url(#arrow)')
     );
 
-    // draw nodes and label
-    g.selectAll('.node')
-      .data(dag.nodes())
-      .join((enter) =>
-        enter
-          .append('g')
-          .attr('transform', ({ x, y }) => `translate(${x}, ${y})`)
-          .call((enter) => {
-            enter.append('circle').attr('r', 10).attr('fill', 'tomato');
-            enter
-              .append('text')
-              .text((d) => d.data.id)
-              .attr('font-weight', 'bold')
-              .attr('font-family', 'sans-serif')
-              .attr('text-anchor', 'middle')
-              .attr('alignment-baseline', 'middle')
-              .attr('fill', 'white');
-          })
-      );
+  // draw nodes and label
+  g.selectAll('.node')
+    .data(dag.nodes())
+    .join((enter) =>
+      enter
+        .append('g')
+        .attr('transform', ({ x, y }) => `translate(${x}, ${y})`)
+        .call((enter) => {
+          enter.append('circle').attr('r', 10).attr('fill', 'tomato');
+          enter
+            .append('text')
+            .text((d) => d.data.id)
+            .attr('font-weight', 'bold')
+            .attr('font-family', 'sans-serif')
+            .attr('text-anchor', 'middle')
+            .attr('alignment-baseline', 'middle')
+            .attr('fill', 'white');
+        })
+    );
 
-    // TODO arrows would be dope, but im kind of going over time at this point
+  // TODO arrows would be dope, but im kind of going over time at this point
+};
+
+const GraphVisualizer = () => {
+  const {
+    state: { selectedProjectID, tasks, dependencies }
+  } = useProjectContext();
+  const svgRef = useRef();
+  const selectedProjectTasks = selectedProjectID
+    ? tasks[selectedProjectID]
+    : null;
+  const selectedProjectDependencies = selectedProjectID
+    ? dependencies[selectedProjectID]
+    : null;
+
+  function createDependencyArray(dependencies = [], tasks = []) {
+    const taskMap = new Map();
+
+    tasks.forEach((task) => {
+      taskMap.set(task.id, {
+        id: task.id,
+        parentIds: []
+      });
+    });
+
+    dependencies.forEach((dep, index) => {
+      try {
+        const successorTask = taskMap.get(dep.successor_id);
+        if (successorTask) {
+          successorTask.parentIds.push(dep.predecessor_id);
+        }
+      } catch (err) {
+        console.log({ err });
+      }
+    });
+
+    const result = Array.from(taskMap.values());
+    console.log({ result: result });
+    return result;
+  }
+
+  useEffect(() => {
+    if (!selectedProjectTasks) {
+      return;
+    }
+
+    const data = createDependencyArray(
+      selectedProjectDependencies,
+      selectedProjectTasks
+    );
+    // lol yeah this just can't handle the larger graphs
+    if (data.length < 100) {
+      drawGraph(data, svgRef);
+    }
   }, [selectedProjectTasks, selectedProjectDependencies]);
 
   return <svg ref={svgRef} />;
@@ -191,5 +204,3 @@ export const DependencyVisualization = () => {
     </ProjectProvider>
   );
 };
-
-DependencyVisualization.whyDidYouRender = true;
